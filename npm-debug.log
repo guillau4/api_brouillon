@@ -1,7 +1,9 @@
 0 info it worked if it ends with ok
 1 verbose cli [ 'C:\\Program Files\\nodejs\\node.exe',
 1 verbose cli   'C:\\Program Files\\nodejs\\node_modules\\npm\\bin\\npm-cli.js',
-1 verbose cli   'start' ]
+1 verbose cli   'run',
+1 verbose cli   'start',
+1 verbose cli   '--scripts-prepend-node-path=auto' ]
 2 info using npm@3.10.10
 3 info using node@v6.11.2
 4 verbose run-script [ 'prestart', 'start', 'poststart' ]
@@ -27,7 +29,7 @@
 15 verbose pkgid api-web-sigfox@0.0.0
 16 verbose cwd C:\Users\Laure\Documents\Laure\api-web\api-web-sigfox
 17 error Windows_NT 6.1.7601
-18 error argv "C:\\Program Files\\nodejs\\node.exe" "C:\\Program Files\\nodejs\\node_modules\\npm\\bin\\npm-cli.js" "start"
+18 error argv "C:\\Program Files\\nodejs\\node.exe" "C:\\Program Files\\nodejs\\node_modules\\npm\\bin\\npm-cli.js" "run" "start" "--scripts-prepend-node-path=auto"
 19 error node v6.11.2
 20 error npm  v3.10.10
 21 error code ELIFECYCLE
