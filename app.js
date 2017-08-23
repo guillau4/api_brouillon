@@ -10,16 +10,12 @@ const routes = require('./app/index');
 
 const app = express();
 
-app.use(bodyParser.urlencoded({
-    extended: true
-}));
-app.use(bodyParser.json());
-
 app.use(logger('dev'));
 app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({ extended: false }));
+app.use(bodyParser.urlencoded({ extended: true }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'client')));
+app.use('/', routes);
 
 
 // catch 404 and forward to error handler

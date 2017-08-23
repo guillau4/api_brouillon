@@ -11,10 +11,9 @@ const config = {
 
 const connectionString = 'postgres://Laure:laure@localhost:5432/test';
 
-router.post('/api/sign_up', (req,res,next)=> {
+router.post('/sign_up', (req,res,next)=> {
     const results = [];
     //Get data from the http request
-    console.log(req.body)
     const data ={name: req.body.name, lastname: req.body.lastname, mail: req.body.mail}
     const pool = pg.Pool(config);
     pool.connect(function (err, client, done) {
@@ -33,7 +32,6 @@ router.post('/api/sign_up', (req,res,next)=> {
                 }
             });
             done();
-            console.log("ok")
             return res.status(201);
     });
 });
