@@ -26,7 +26,7 @@ router.post('/sign_up', (req,res,next)=> {
             console.log(err);
             return res.status(500).json({success: false, data: err }).end();
         }else {
-            //Test if mail adress already exists
+            //Test if mail address already exists
             client.query('SELECT * FROM users WHERE email = $1', [data.email],
                 function (error, result) {
                     if (error) {
@@ -34,9 +34,9 @@ router.post('/sign_up', (req,res,next)=> {
                         done();
                         return res.status(500).json({success: false, data: error, code:500}).end();
                     } else if (result.rows[0] != null) {
-                        console.log("Mail adress already exists in Database");
+                        console.log("Mail address already exists in Database");
                         done();
-                        return res.status(409).json({success: false, data:"Mail adress already exists in Database", code:409}).end();
+                        return res.status(409).json({success: false, data:"Mail address already exists in Database", code:409}).end();
                     } else {
                         //Insert user query
                         client.query('INSERT INTO  users(firstname, lastname, email, password) values ($1, $2, $3, $4)',
@@ -48,7 +48,7 @@ router.post('/sign_up', (req,res,next)=> {
                                     return res.status(500).json({success: false, data: error, code:500}).end();
                                 }else{
                                     done();
-                                    return res.status(201).json({success: true, data: "ok", code:500}).end();
+                                    return res.status(201).json({success: true, data: "ok", code:201}).end();
                                 }
                             });
                     }

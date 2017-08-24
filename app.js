@@ -1,12 +1,12 @@
 const express = require('express');
 const path = require('path');
-const favicon = require('serve-favicon');
 const logger = require('morgan');
 const cookieParser = require('cookie-parser');
 const bodyParser = require('body-parser');
 var cors = require('cors')
 
-const routes = require('./app/index');
+const signup = require('./app/signup');
+const login =require('./app/login');
 
 
 const app = express();
@@ -17,7 +17,8 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'client')));
-app.use('/', routes);
+app.use('/', signup);
+app.use('/',login);
 
 
 // catch 404 and forward to error handler
