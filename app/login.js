@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const pg = require('pg');
+const encrypt = require('./encrypt');
 
 const config = {
     user: 'Laure',
@@ -23,18 +24,21 @@ router.post('/login',(req,res,next)=> {
             console.log(err);
             return res.status(500).json({success: false, data: err }).end();
         }else {
-            //Test if mail address already exists
-            client.query('SELECT * FROM users WHERE email = $1 AND password = $2', [data.email, data.password],
+       //Test if mail address already exists
+            client.query('SELECT * FROM users WHERE email = $1', [data.email],
                 function (error, result) {
                     if (error) {
                         console.log(error);
                         done();
                         return res.status(500).json({success: false, data: error, code:500}).end();
-                    }else if (result.rows[0]==null ){
-                        console.log("Password or email not valid");
+                    }else if (result.rows[0]==null){
+                        console.log("Email not valid");
                         done();
                         return res.status(500).json({success: false, data: error, code:1}).end();
                     }else{
+                        var cb
+                        comparePassword(data.password,result.rows[0].password,cb)
+                        console.log(cb)
                         done();
                         return res.status(200).json({success: true, data: "ok", code:200}).end();
                     }
