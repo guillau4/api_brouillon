@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const pg = require('pg');
 const bcrypt = require('bcrypt-nodejs');
+const jwt = require('jsonwebtoken');
 
 const config = {
     user: 'Laure',
@@ -42,10 +43,22 @@ router.post('/login',(req,res,next)=> {
                              console.log("Password not valid");
                              done();
                              return res.status(500).json({success: false, data: error, code:1}).end();
+                         }else if (result.rows[0].status == 2) {
+                             console.log("Account not validate");
+                             done();
+                             return res.status(500).json({success: false, data: error, code:2}).end();
+                         }else if (result.rows[0].status == 3) {
+                             console.log("Account blocked");
+                             done();
+                             return res.status(500).json({success: false, data: error, code:3}).end();
+                         }else if (result.rows[0].status == 4) {
+                             console.log("Need to activate account");
+                             done();
+                             return res.status(500).json({success: false, data: error, code:4}).end();
                          }else{
                              console.log("ok");
                              done();
-                             return res.status(200).json({success: false, data: error, code:200}).end();
+                             return res.status(200).json({success: true, data: "Ok", code:200}).end();
                          }
                         })
                     }

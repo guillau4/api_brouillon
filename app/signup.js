@@ -51,7 +51,7 @@ router.post('/sign_up', (req,res,next)=> {
                             bcrypt.hash(data.password, salt, null, function (err, hash) {
                                 if (err) return;
                                 //Insert user query
-                                client.query('INSERT INTO  users(firstname, lastname, email, password) values ($1, $2, $3, $4)',
+                                client.query('INSERT INTO  users(firstname, lastname, email, password, status) values ($1, $2, $3, $4, 2)',
                                     [data.firstname, data.lastname, data.email, hash],
                                     function (error, result) {
                                         if (error) {
