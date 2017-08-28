@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const pg = require('pg');
-const encrypt = require('./encrypt');
+const bcrypt = require('bcrypt-nodejs');
 
 const config = {
     user: 'Laure',
@@ -36,11 +36,18 @@ router.post('/login',(req,res,next)=> {
                         done();
                         return res.status(500).json({success: false, data: error, code:1}).end();
                     }else{
-                        var cb
-                        comparePassword(data.password,result.rows[0].password,cb)
-                        console.log(cb)
-                        done();
-                        return res.status(200).json({success: true, data: "ok", code:200}).end();
+                        bcrypt.compare(data.password, result.rows[0].password,function (err,isMatched) {
+                         if(err) throw err
+                         else if(isMatched == false){
+                             console.log("Password not valid");
+                             done();
+                             return res.status(500).json({success: false, data: error, code:1}).end();
+                         }else{
+                             console.log("ok");
+                             done();
+                             return res.status(200).json({success: false, data: error, code:200}).end();
+                         }
+                        })
                     }
                 });
         }
