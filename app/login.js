@@ -2,7 +2,8 @@ const express = require('express');
 const router = express.Router();
 const pg = require('pg');
 const bcrypt = require('bcrypt-nodejs');
-const jwt = require('jsonwebtoken');
+const jwt = require('jwt-simple');
+
 
 const config = {
     user: 'Laure',
