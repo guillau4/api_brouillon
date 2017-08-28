@@ -2,8 +2,10 @@ const express = require('express');
 const router = express.Router();
 const pg = require('pg');
 const bcrypt = require('bcrypt-nodejs');
-const jwt = require('jwt-simple');
+const jwtBuilder = require('jwt-builder');
+const randomstring = require("randomstring");
 
+const key = randomstring.generate();
 
 const config = {
     user: 'Laure',
@@ -58,6 +60,13 @@ router.post('/login',(req,res,next)=> {
                              return res.status(500).json({success: false, data: error, code:4}).end();
                          }else{
                              console.log("ok");
+                             var jwtToken = jwtBuilder({
+                                 secret : key,
+                                 exp :  600,
+                                 algorithm : 'HS256',
+                                 userID : data.uuid
+
+                         })
                              done();
                              return res.status(200).json({success: true, data: "Ok", code:200}).end();
                          }
