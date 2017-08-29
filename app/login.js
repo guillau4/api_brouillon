@@ -66,7 +66,11 @@ router.post('/login',(req,res,next)=> {
                                             userID: data.uuid,
                                             secret: tools.secret
                                         })
-                                        var refreshToken = tools.refreshToken;
+                                        var refreshToken = jwtBuilder({
+                                            iat: date,
+                                            userID: data.uuid,
+                                            secret: tools.refreshToken
+                                        })
                                         client.query('INSERT INTO refreshtoken (token,expiration,uuid) values ($1, $2, $3)',
                                             [refreshToken, date, data.uuid],
                                             function (error, result) {
