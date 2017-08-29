@@ -5,7 +5,7 @@ const bcrypt = require('bcrypt-nodejs');
 const jwtBuilder = require('jwt-builder');
 const tools= require('./tools');
 const moment = require('moment');
-
+const randomstring = require("randomstring");
 
 const config = {
     user: 'Laure',
@@ -17,8 +17,16 @@ const connectionString = 'postgres://Laure:laure@localhost:5432/test';
 
 
 
-router.post('/login',(req,res,next)=> {
-    const results = [];
+router.post('/login',function(req,res,next){
+    if(req.body.email!=null){
+        loginWithoutRefreshToken(req, res, next);
+    } else{
+        console.log(req.body.refresh_token)
+        loginWithRefreshToken(req, res, next);
+    }
+})
+
+function loginWithoutRefreshToken (req,res,next) {
     //Get data from the http request
     const data ={email: req.body.email, password: req.body.password, uuid : req.body.uuid}
     const pool = pg.Pool(config);
@@ -66,13 +74,10 @@ router.post('/login',(req,res,next)=> {
                                             userID: data.uuid,
                                             secret: tools.secret
                                         })
-                                        var refreshToken = jwtBuilder({
-                                            iat: date,
-                                            userID: data.uuid,
-                                            secret: tools.refreshToken
-                                        })
-                                        client.query('INSERT INTO refreshtoken (token,expiration,uuid) values ($1, $2, $3)',
-                                            [refreshToken, date, data.uuid],
+                                        console.log(jwtToken)
+                                        var refreshToken = randomstring.generate();
+                                        client.query('INSERT INTO refreshtoken (token,uuid) values ($1, $2)',
+                                            [refreshToken, data.uuid],
                                             function (error, result) {
                                                 if (error) {
                                                     console.log(error);
@@ -100,6 +105,58 @@ router.post('/login',(req,res,next)=> {
         }
     )
 }
-)
+
+function loginWithRefreshToken (req,res,next) {
+    //Get data from the http request
+    const data ={refreshToken: req.body.refresh_token}
+    const pool = pg.Pool(config);
+    pool.connect(function (err, client, done) {
+            if (err) {
+                done();
+                console.log(err);
+                return res.status(500).json({success: false, data: err}).end();
+            } else {
+                console.log(data.refreshToken)
+                //Test if mail address already exists
+                client.query('SELECT * FROM refreshtoken WHERE token = $1', [data.refreshToken],
+                    function (err, result) {
+                        if (err) throw err;
+                        else if (result.rows[0] == null) {
+                            console.log("Token not valid");
+                            return res.status(500).json({success: false, data:"Token not valid", code: 500}).end();
+                        } else {
+                            var date = moment().valueOf();
+                            var jwtToken = jwtBuilder({
+                                iat: date,
+                                userID: data.uuid,
+                                secret: tools.secret
+                            })
+                            var refreshToken = randomstring.generate();
+                            client.query('UPDATE refreshtoken SET token = $1 where token = $2',
+                                [refreshToken, data.refreshToken],
+                                function (error, result) {
+                                    if (error) {
+                                        console.log(error);
+                                        done();
+                                        return res.status(500).json({success: false, data: error, code: 500}).end();
+                                    } else {
+                                        done();
+                                        return res.status(200).json({
+                                            success: true,
+                                            access_token: jwtToken,
+                                            user_uid: data.uuid,
+                                            refresh_token: refreshToken,
+                                            expires_in: 600000
+                                        }).end();
+                                    }
+                                }
+                            )
+                        }
+                    }
+                )
+            }
+        }
+    )
+}
 
 module.exports =router;
