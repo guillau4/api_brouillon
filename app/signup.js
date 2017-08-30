@@ -3,6 +3,7 @@ const router = express.Router();
 const pg = require('pg');
 const path = require('path');
 const bcrypt = require('bcrypt-nodejs');
+const uuidv4 = require("uuid/v4");
 
 const config = {
     user: 'Laure',
@@ -51,8 +52,8 @@ router.post('/sign_up', (req,res,next)=> {
                             bcrypt.hash(data.password, salt, null, function (err, hash) {
                                 if (err) return;
                                 //Insert user query
-                                client.query('INSERT INTO  users(firstname, lastname, email, password, status) values ($1, $2, $3, $4, 2)',
-                                    [data.firstname, data.lastname, data.email, hash],
+                                client.query('INSERT INTO  users(uid, firstname, lastname, email, password, status) values ($1, $2, $3, $4, $5, 2)',
+                                    [uuidv4(),data.firstname, data.lastname, data.email, hash],
                                     function (error, result) {
                                         if (error) {
                                             console.log(error);
@@ -65,6 +66,38 @@ router.post('/sign_up', (req,res,next)=> {
                                     })
                                 })
                         })
+                    }
+                }
+            )
+        }
+    })
+})
+
+router.get('/sign_up/:userUID', (req,res,next)=> {
+//Get data from the http request
+const pool = pg.Pool(config);
+pool.connect(function (err, client, done) {
+        if (err) {
+            done();
+            console.log(err);
+            return res.status(500).json({success: false, data: err}).end();
+        } else {
+            uid = req.params.userUID;
+            client.query('SELECT * FROM users WHERE uid = $1 ', [uid],
+            function (error, result) {
+                if (error) throw error;
+                else {
+                    done();
+                    return res.status(201).json(
+                        {
+                            success: true,
+                            uid: result.rows[0].uid,
+                            last_name : result.rows[0].lastname,
+                            first_name : result.rows[0].firstname,
+                            email: result.rows[0].email,
+                            password: result.rows[0].password,
+                            status: result.rows[0].status
+                        });
                     }
                 }
             )
