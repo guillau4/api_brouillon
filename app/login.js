@@ -76,8 +76,8 @@ function loginWithoutRefreshToken (req,res,next) {
                                         secret: tools.secret
                                     })
                                     var refreshToken = randomstring.generate();
-                                    client.query('INSERT INTO refreshtoken (token,uuid) values ($1, $2)',
-                                        [refreshToken, result.rows[0].email],
+                                    client.query('UPDATE refreshtoken SET token = $1 where uuid = $2',
+                                        [refreshToken, result.rows[0].uid],
                                         function (error, result) {
                                             if (error) {
                                                 console.log(error);
@@ -94,7 +94,7 @@ function loginWithoutRefreshToken (req,res,next) {
                                                     access_token: jwtToken,
                                                     user_uid: uid,
                                                     refresh_token: refreshToken,
-                                                    expires_in: 300000
+                                                    expires_in: 100000
                                                 }).end();
                                             }
                                         }
@@ -140,7 +140,7 @@ function loginWithRefreshToken (req,res,next) {
                                 success: true,
                                 access_token: jwtToken,
                                 refresh_token: data.refreshToken,
-                                expires_in: 300000
+                                expires_in: 100000
                             }).end();
                         }
                     }
