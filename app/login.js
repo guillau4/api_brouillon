@@ -17,8 +17,29 @@ const config = {
 const connectionString = 'postgres://Laure:laure@localhost:5432/test';
 
 
+/*Function: login
+Recieve a post request from server and call the right login function depending on the parameters inside the request body.
 
-router.post('/login',function(req,res,next){
+*Post parameters :*
+
+- email
+
+- password
+
+- uuid
+
+or
+
+- refreshtoken
+
+
+See Also:
+
+    <loginWithoutRefreshToken>
+    <loginWithRefreshToken>
+ */
+
+router.post('/login',function login(req,res,next){
     if(req.body.email!=null){
         loginWithoutRefreshToken(req, res, next);
     } else{
@@ -26,6 +47,14 @@ router.post('/login',function(req,res,next){
     }
 })
 
+
+/*Function: loginWithoutRefreshToken
+Check mail and password and send a created a token and refreshtoken
+
+See Also:
+
+    <login>
+ */
 function loginWithoutRefreshToken (req,res,next) {
     //Get data from the http request
     const data = {email: req.body.email, password: req.body.password, uuid: req.body.uuid}
@@ -67,7 +96,6 @@ function loginWithoutRefreshToken (req,res,next) {
                                     done();
                                     return res.status(500).json({success: false, data: error, code: 4}).end();
                                 } else {
-                                    console.log("ok");
                                     var date = moment().valueOf();
                                     var uid = result.rows[0].uid;
                                     var jwtToken = jwtBuilder({
@@ -110,7 +138,13 @@ function loginWithoutRefreshToken (req,res,next) {
 }
 
 
+/*Function: loginWithRefreshToken
+Check refreshtoken and send a new token
 
+See Also:
+
+    <login>
+ */
 function loginWithRefreshToken (req,res,next) {
     //Get data from the http request
     const data = {refreshToken: req.body.refresh_token}

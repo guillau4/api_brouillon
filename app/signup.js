@@ -15,8 +15,24 @@ const config = {
 
 const connectionString = 'postgres://Laure:laure@localhost:5432/test';
 
+/*Function: sign_up
+Add a user to the database with all his user details and create a corresponding user ID. His mail adress must not exist beforehand in the database.
 
-router.post('/sign_up', (req,res,next)=> {
+*Post parameters :*
+
+- firstname
+
+- lastname
+
+- email
+
+- password
+
+See Also:
+<login>
+ */
+
+router.post('/sign_up', function sign_up(req,res,next) {
     const results = [];
     //Get data from the http request
     const data = {
@@ -96,7 +112,22 @@ router.post('/sign_up', (req,res,next)=> {
     })
 })
 
-router.get('/sign_up/:userUID', (req,res,next)=> {
+
+/*Function: getUser
+Get the personnal information of a user .
+
+*Post parameter :*
+
+- token
+
+*URL parameter :*
+
+- userUID
+
+See Also:
+<modifyUser>
+ */
+router.get('/sign_up/:userUID', function getUser(req,res,next){
     uid = req.params.userUID;
     header = req.headers['x-authorization'];
     cb = authorised.isAuthorized(header,uid);
@@ -135,25 +166,75 @@ router.get('/sign_up/:userUID', (req,res,next)=> {
     }
 })
 
-router.put('/sign_up/:userUID', (req,res,next)=> {
+
+
+/*Function: modifyUser
+Get the personnal information of a user .
+
+*Put parameter :*
+
+- fisrtname
+
+- lastname
+
+- email
+
+or
+
+- password
+
+*URL parameter :*
+
+- userUID
+
+See Also:
+<getUser>
+<updateUser>
+<updatePassword>
+ */
+
+router.put('/sign_up/:userUID', function modifyUser(req,res,next){
     uid = req.params.userUID;
     header = req.headers['x-authorization'];
     cb = authorised.isAuthorized(header,uid);
+
     if(cb == true) {
+        const pool = pg.Pool(config);
+        pool.connect(function (err, client, done) {
+            if (err) throw err;
+            else {
 //Get data from the http request
-        if(req.body.email && req.body.first_name && req.body.last_name) {
-            var success;
-            profileUpdate.updateUser(req.body.email,req.body.first_name,req.body.last_name,uid,success);
-            console.log(success)
-            if(success == true) {
-                return res.status(200).json({success: true, data: "ok"}).end();
-            }else{
-                return res.status(500).json({success: false, data: "update error"}).end();
+                if (req.body.email && req.body.first_name && req.body.last_name) {
+                    profileUpdate.updateUser(req.body.email, req.body.first_name, req.body.last_name, uid, client, function (result) {
+                            if (result == 1) {
+                                done();
+                                return res.status(200).json({success: true, data: "ok"}).end();
+                            } else if (result == 2) {
+                                done();
+                                return res.status(409).json({success: false, data: "mail already exists", code: 409}).end();
+                            } else {
+                                done();
+                                return res.status(500).json({success: false, data: "update error"}).end();
+                            }
+                        }
+                    )
+                }else if(req.body.password){
+                    profileUpdate.updatePassword(req.body.password, uid, client, function (result) {
+                            if (result == true) {
+                                done();
+                                return res.status(200).json({success: true, data: "ok"}).end();
+                            } else {
+                                done();
+                                return res.status(500).json({success: false, data: "update error"}).end();
+                            }
+                        }
+                    )
+                } else {
+                    done();
+                    return res.status(500).json({success: false, data: "param not valid"}).end();
+                }
             }
-       }else{
-            done();
-            return res.status(500).json({success: false, data: "param not valid"}).end();
-        }
+        })
     }else{
         done();
         return res.status(500).json({success: false, data: "authorization denied"}).end();
