@@ -1,7 +1,6 @@
 const express = require('express');
 const router = express.Router();
 const pg = require('pg');
-const path = require('path');
 const bcrypt = require('bcrypt-nodejs');
 const uuidv4 = require("uuid/v4");
 const authorised = require("./authorized")
@@ -12,8 +11,6 @@ const config = {
     password: 'laure',
     database: 'test',
 }
-
-const connectionString = 'postgres://Laure:laure@localhost:5432/test';
 
 /*Function: sign_up
 Add a user to the database with all his user details and create a corresponding user ID. His mail adress must not exist beforehand in the database.
@@ -33,7 +30,6 @@ See Also:
  */
 
 router.post('/sign_up', function sign_up(req,res,next) {
-    const results = [];
     //Get data from the http request
     const data = {
         firstname: req.body.firstname,
@@ -70,18 +66,17 @@ router.post('/sign_up', function sign_up(req,res,next) {
                             bcrypt.hash(data.password, salt, null, function (err, hash) {
                                 if (err) return;
                                 //Insert user query
-                                uuid=uuidv4();
-                                console.log(uuid)
+                                uid=uuidv4();
                                 client.query('INSERT INTO  users(uid, firstname, lastname, email, password, status) values ($1, $2, $3, $4, $5, 2)',
-                                    [uuid,data.firstname, data.lastname, data.email, hash],
+                                    [uid,data.firstname, data.lastname, data.email, hash],
                                     function (error, result) {
                                         if (error) {
                                             console.log(error);
                                             done();
                                             return res.status(500).json({success: false, data: error, code: 500}).end();
                                         } else {
-                                            client.query('INSERT INTO refreshtoken(token,uuid) values (0, $1)',
-                                                [uuid],
+                                            client.query('INSERT INTO refreshtoken(token,uid) values (0, $1)',
+                                                [uid],
                                                 function (error, result) {
                                                     if (error) {
                                                         console.log(error);
@@ -130,40 +125,40 @@ See Also:
 router.get('/sign_up/:userUID', function getUser(req,res,next){
     uid = req.params.userUID;
     header = req.headers['x-authorization'];
-    cb = authorised.isAuthorized(header,uid);
-    if(cb == true) {
+    authorised.isAuthorized(header,uid, function (cb) {
+        if (cb == true) {
 //Get data from the http request
-        const pool = pg.Pool(config);
-        pool.connect(function (err, client, done) {
-            if (err) {
-                done();
-                console.log(err);
-                return res.status(500).json({success: false, data: err}).end();
-            } else {
-                client.query('SELECT * FROM users WHERE uid = $1 ', [uid],
-                    function (error, result) {
-                        if (error) throw error;
-                        else {
-                            done();
-                            return res.status(201).json(
-                                {
-                                    success: true,
-                                    uid: result.rows[0].uid,
-                                    last_name: result.rows[0].lastname,
-                                    first_name: result.rows[0].firstname,
-                                    email: result.rows[0].email,
-                                    password: result.rows[0].password,
-                                    status: result.rows[0].status
-                                });
+            const pool = pg.Pool(config);
+            pool.connect(function (err, client, done) {
+                if (err) {
+                    done();
+                    console.log(err);
+                    return res.status(500).json({success: false, data: err}).end();
+                } else {
+                    client.query('SELECT * FROM users WHERE uid = $1 ', [uid],
+                        function (error, result) {
+                            if (error) throw error;
+                            else {
+                                done();
+                                return res.status(201).json(
+                                    {
+                                        success: true,
+                                        uid: result.rows[0].uid,
+                                        last_name: result.rows[0].lastname,
+                                        first_name: result.rows[0].firstname,
+                                        email: result.rows[0].email,
+                                        password: result.rows[0].password,
+                                        status: result.rows[0].status
+                                    });
+                            }
                         }
-                    }
-                )
-            }
-        })
-    }else{
-        done();
-        return res.status(500).json({success: false, data: "authorization denied"}).end();
-    }
+                    )
+                }
+            })
+        } else {
+            return res.status(500).json({success: false, data: "authorization denied"}).end();
+        }
+    })
 })
 
 
@@ -196,49 +191,54 @@ See Also:
 router.put('/sign_up/:userUID', function modifyUser(req,res,next){
     uid = req.params.userUID;
     header = req.headers['x-authorization'];
-    cb = authorised.isAuthorized(header,uid);
-
-    if(cb == true) {
-        const pool = pg.Pool(config);
-        pool.connect(function (err, client, done) {
-            if (err) throw err;
-            else {
+    cb = authorised.isAuthorized(header,uid, function (cb) {
+        if (cb == true) {
+            const pool = pg.Pool(config);
+            pool.connect(function (err, client, done) {
+                if (err) throw err;
+                else {
 //Get data from the http request
-                if (req.body.email && req.body.first_name && req.body.last_name) {
-                    profileUpdate.updateUser(req.body.email, req.body.first_name, req.body.last_name, uid, client, function (result) {
-                            if (result == 1) {
-                                done();
-                                return res.status(200).json({success: true, data: "ok"}).end();
-                            } else if (result == 2) {
-                                done();
-                                return res.status(409).json({success: false, data: "mail already exists", code: 409}).end();
-                            } else {
-                                done();
-                                return res.status(500).json({success: false, data: "update error"}).end();
+                    if (req.body.email && req.body.first_name && req.body.last_name) {
+                        profileUpdate.updateUser(req.body.email, req.body.first_name, req.body.last_name, uid, client, function (result) {
+                                if (result == 1) {
+                                    done();
+                                    return res.status(200).json({success: true, data: "ok"}).end();
+                                } else if (result == 2) {
+                                    done();
+                                    return res.status(409).json({
+                                        success: false,
+                                        data: "mail already exists",
+                                        code: 409
+                                    }).end();
+                                } else {
+                                    done();
+                                    return res.status(500).json({success: false, data: "update error"}).end();
+                                }
                             }
-                        }
-                    )
-                }else if(req.body.password){
-                    profileUpdate.updatePassword(req.body.password, uid, client, function (result) {
-                            if (result == true) {
-                                done();
-                                return res.status(200).json({success: true, data: "ok"}).end();
-                            } else {
-                                done();
-                                return res.status(500).json({success: false, data: "update error"}).end();
+                        )
+                    } else if (req.body.password) {
+                        profileUpdate.updatePassword(req.body.password, uid, client, function (result) {
+                                if (result == true) {
+                                    done();
+                                    return res.status(200).json({success: true, data: "ok"}).end();
+                                } else {
+                                    done();
+                                    return res.status(500).json({success: false, data: "update error"}).end();
+                                }
                             }
-                        }
-                    )
-                } else {
-                    done();
-                    return res.status(500).json({success: false, data: "param not valid"}).end();
+                        )
+                    } else {
+                        done();
+                        return res.status(500).json({success: false, data: "param not valid"}).end();
+                    }
                 }
-            }
-        })
-    }else{
-        done();
-        return res.status(500).json({success: false, data: "authorization denied"}).end();
+            })
+        } else {
+            done();
+            return res.status(500).json({success: false, data: "authorization denied"}).end();
+        }
     }
+    )
 })
 
 

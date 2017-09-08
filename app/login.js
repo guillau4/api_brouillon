@@ -14,9 +14,6 @@ const config = {
     database: 'test',
 }
 
-const connectionString = 'postgres://Laure:laure@localhost:5432/test';
-
-
 /*Function: login
 Recieve a post request from server and call the right login function depending on the parameters inside the request body.
 
@@ -100,13 +97,13 @@ function loginWithoutRefreshToken (req,res,next) {
                                     var uid = result.rows[0].uid;
                                     var jwtToken = jwtBuilder({
                                         iat: date,
-                                        userID: uid,
+                                        uuid: data.uuid,
                                         secret: tools.secret
                                     })
                                     var refreshToken = randomstring.generate();
-                                    client.query('UPDATE refreshtoken SET token = $1 where uuid = $2',
+                                    client.query('UPDATE refreshtoken SET token = $1 where uid = $2',
                                         [refreshToken, result.rows[0].uid],
-                                        function (error, result) {
+                                        function (error, result2) {
                                             if (error) {
                                                 console.log(error);
                                                 done();
@@ -116,14 +113,28 @@ function loginWithoutRefreshToken (req,res,next) {
                                                     code: 500
                                                 }).end();
                                             } else {
-                                                done();
-                                                return res.status(200).json({
-                                                    success: true,
-                                                    access_token: jwtToken,
-                                                    user_uid: uid,
-                                                    refresh_token: refreshToken,
-                                                    expires_in: 100000
-                                                }).end();
+                                                client.query("UPDATE users SET uuid = $1 where uid = $2",
+                                                    [data.uuid, result.rows[0].uid],function (error, result) {
+                                                        if (error) {
+                                                            console.log(error);
+                                                            done();
+                                                            return res.status(500).json({
+                                                                success: false,
+                                                                data: error,
+                                                                code: 500
+                                                            }).end();
+                                                        } else {
+                                                            done();
+                                                            return res.status(200).json({
+                                                                success: true,
+                                                                access_token: jwtToken,
+                                                                user_uid: uid,
+                                                                refresh_token: refreshToken,
+                                                                expires_in: 100000
+                                                            }).end();
+                                                        }
+                                                    }
+                                                )
                                             }
                                         }
                                     )

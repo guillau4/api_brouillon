@@ -7,7 +7,8 @@ const cors = require('cors');
 
 
 const signup = require('./app/signup');
-const login =require('./app/login');
+const login = require('./app/login');
+const pocs = require('./app/pocs');
 
 
 const app = express();
@@ -19,6 +20,7 @@ app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'client')));
 app.use('/', signup);
 app.use('/',login);
+app.use('/', pocs);
 
 
 // catch 404 and forward to error handler
