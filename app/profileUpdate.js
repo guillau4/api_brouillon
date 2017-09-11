@@ -42,7 +42,7 @@ exports.updatePassword = function (password,uid,client,callback){
     return bcrypt.genSalt(10, function(err, salt) {
         if (err) {
             return callback(false);
-        } else { //handle error
+        } else {
             return bcrypt.hash(password, salt, null, function (err, hash) {
                 if (err) {
                     return callback(false);

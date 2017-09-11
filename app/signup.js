@@ -67,7 +67,7 @@ router.post('/sign_up', function sign_up(req,res,next) {
                                 if (err) return;
                                 //Insert user query
                                 uid=uuidv4();
-                                client.query('INSERT INTO  users(uid, firstname, lastname, email, password, status) values ($1, $2, $3, $4, $5, 2)',
+                                client.query('INSERT INTO  users(uid, firstname, lastname, email, password, status) values ($1, $2, $3, $4, $5,1)',
                                     [uid,data.firstname, data.lastname, data.email, hash],
                                     function (error, result) {
                                         if (error) {
@@ -127,7 +127,6 @@ router.get('/sign_up/:userUID', function getUser(req,res,next){
     header = req.headers['x-authorization'];
     authorised.isAuthorized(header,uid, function (cb) {
         if (cb == true) {
-//Get data from the http request
             const pool = pg.Pool(config);
             pool.connect(function (err, client, done) {
                 if (err) {
@@ -137,7 +136,11 @@ router.get('/sign_up/:userUID', function getUser(req,res,next){
                 } else {
                     client.query('SELECT * FROM users WHERE uid = $1 ', [uid],
                         function (error, result) {
-                            if (error) throw error;
+                            if (error) {
+                                throw error;
+                                done();
+                                return res.status(500).json({success: false, data: error}).end();
+                            }
                             else {
                                 done();
                                 return res.status(201).json(
@@ -197,7 +200,6 @@ router.put('/sign_up/:userUID', function modifyUser(req,res,next){
             pool.connect(function (err, client, done) {
                 if (err) throw err;
                 else {
-//Get data from the http request
                     if (req.body.email && req.body.first_name && req.body.last_name) {
                         profileUpdate.updateUser(req.body.email, req.body.first_name, req.body.last_name, uid, client, function (result) {
                                 if (result == 1) {

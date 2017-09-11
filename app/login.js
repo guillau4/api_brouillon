@@ -53,7 +53,6 @@ See Also:
     <login>
  */
 function loginWithoutRefreshToken (req,res,next) {
-    //Get data from the http request
     const data = {email: req.body.email, password: req.body.password, uuid: req.body.uuid}
     const pool = pg.Pool(config);
     pool.connect(function (err, client, done) {
@@ -62,7 +61,6 @@ function loginWithoutRefreshToken (req,res,next) {
             console.log(err);
             return res.status(500).json({success: false, data: err}).end();
         } else {
-            //Test if mail address already exists
             client.query('SELECT * FROM users WHERE email = $1', [data.email],
                 function (error, result) {
                     if (error) {
@@ -166,7 +164,6 @@ function loginWithRefreshToken (req,res,next) {
                 console.log(err);
                 return res.status(500).json({success: false, data: err}).end();
             } else {
-                //Test if mail address already exists
                 client.query('SELECT * FROM refreshtoken WHERE token = $1', [data.refreshToken],
                     function (err, result) {
                         if (err) throw err;
