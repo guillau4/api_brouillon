@@ -171,19 +171,28 @@ function loginWithRefreshToken (req,res,next) {
                             console.log("Token not valid");
                             return res.status(500).json({success: false, data: "Token not valid", code: 500}).end();
                         } else {
-                            var date = moment().valueOf();
-                            var jwtToken = jwtBuilder({
-                                iat: date,
-                                userID: result.rows[0].uuid,
-                                secret: tools.secret
-                            })
-                            done();
-                            return res.status(200).json({
-                                success: true,
-                                access_token: jwtToken,
-                                refresh_token: data.refreshToken,
-                                expires_in: 100000
-                            }).end();
+                            client.query('SELECT uuid FROM users WHERE uid = $1 ', [result.rows[0].uid],
+                                function (error, response) {
+                                    if (error) {
+                                        done();
+                                        return res.status(500).json({success: false, data: error, code: 500}).end();
+                                    } else {
+                                        var date = moment().valueOf();
+                                        var jwtToken = jwtBuilder({
+                                            iat: date,
+                                            uuid: response.rows[0].uuid,
+                                            secret: tools.secret
+                                        })
+                                        done();
+                                        return res.status(200).json({
+                                            success: true,
+                                            access_token: jwtToken,
+                                            refresh_token: data.refreshToken,
+                                            expires_in: 100000
+                                        }).end();
+                                    }
+                                }
+                            )
                         }
                     }
                 )

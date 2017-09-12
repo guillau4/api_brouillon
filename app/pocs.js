@@ -33,15 +33,19 @@ router.get('/pocs/:userUID',function getPocs(req,res,next){
                             } else {
                                 str = JSON.stringify(result.rows)
                                 var data = JSON.parse(str);
-                                for (var i in data) {
-                                    data[i].favorite = "false"
-                                }
-                               favorite.getFavorite(uid, client, function (response) {
-                                    for (var i in response){
-                                        data[response[i].sonde_id].favorite = "true";
+                               favorite.getFavorite(uid, client, data, function (response) {
+                                    for (var i in data){
+                                        sonde_id = data[i].mac;
+                                        for (var j in response){
+                                            if (sonde_id==response[j].sonde_id) {
+                                                data[i].favorite = 'true';
+                                            }
+                                        }
+                                        if (!data[i].favorite){
+                                            data[i].favorite = 'false';
+                                        }
                                     }
                                     json_result = JSON.stringify(data);
-                                    console.log(json_result)
                                     done();
                                     return res.status(201).json(json_result).end();
                                }
@@ -52,16 +56,17 @@ router.get('/pocs/:userUID',function getPocs(req,res,next){
                 }
             })
         } else {
+            done()
             return res.status(500).json({success: false, data: "authorization denied"}).end();
         }
     })
 })
 
-router.post('/pocs/:userUID',function changeFavorite(req,res,next) {
+router.put('/pocs/:userUID',function changeFavorite(req,res,next) {
     uid = req.params.userUID;
     const data = {
-        id: req.body.uid,
-        favorite: req.body.favorite
+        id: req.body.poc.uid,
+        favorite: req.body.poc.favorite
     }
     const pool = pg.Pool(config);
     pool.connect(function (err, client, done) {
@@ -70,7 +75,7 @@ router.post('/pocs/:userUID',function changeFavorite(req,res,next) {
             console.log(err);
             return res.status(500).json({success: false, data: err}).end();
         } else {
-            if (data.favorite){
+            if (data.favorite == 'true'){
                 client.query('DELETE FROM favorite WHERE user_uid = $1 AND sonde_id = $2',
                     [uid, data.id],
                     function (error, result) {
@@ -79,6 +84,7 @@ router.post('/pocs/:userUID',function changeFavorite(req,res,next) {
                             done();
                             return res.status(500).json({success: false, data: error, code: 500}).end();
                         } else {
+                            done();
                             return res.status(200).json({success: true, data: "ok", code: 201}).end();
                         }
                     })
@@ -91,6 +97,7 @@ router.post('/pocs/:userUID',function changeFavorite(req,res,next) {
                             done();
                             return res.status(500).json({success: false, data: error, code: 500}).end();
                         } else {
+                            done();
                             return res.status(200).json({success: true, data: "ok", code: 201}).end();
                         }
                     }
@@ -99,6 +106,44 @@ router.post('/pocs/:userUID',function changeFavorite(req,res,next) {
         }
     })
 })
+
+router.get('/pocs/favorite/:userUID',function getFavorite(req,res,next){
+    uid = req.params.userUID;
+    header = req.headers['x-authorization'];
+    cb = authorised.isAuthorized(header,uid, function (cb) {
+        if (cb == true) {
+            const pool = pg.Pool(config);
+            pool.connect(function (err, client, done) {
+                if (err) {
+                    done();
+                    console.log(err);
+                    return res.status(500).json({success: false, data: err}).end();
+                } else {
+                    client.query('SELECT * FROM sondes WHERE mac in (SELECT sonde_id FROM favorite WHERE user_uid = $1)',
+                        [uid],
+                        function (error, result) {
+                        if (error) {
+                            console.log(error);
+                            done();
+                            return res.status(500).json({success: false, data: error, code: 500}).end();
+                        } else {
+                            str = JSON.stringify(result.rows);
+                            var data = JSON.parse(str);
+                            console.log(data)
+                            json_result = JSON.stringify(data);
+                            done();
+                            return res.status(201).json(json_result).end();
+                        }
+                    }
+                )
+                }
+            })
+        } else {
+            return res.status(500).json({success: false, data: "authorization denied"}).end();
+        }
+    })
+})
+
 
 
 module.exports =router;
